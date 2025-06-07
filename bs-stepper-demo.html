@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check In</title>
+    
+    <!-- Bootstrap 4 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- BS-Stepper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bs-stepper/dist/css/bs-stepper.min.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .step-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .step-buttons button {
+            flex: 1;
+            min-height: 44px;
+        }
+        .content {
+            padding: 15px 0;
+        }
+        .camera-container {
+            overflow-x: auto;
+        }
+        .camera-controls {
+            margin-top: 15px;
+        }
+        .camera-controls button {
+            margin: 5px;
+            min-height: 44px;
+            min-width: 80px;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+                font-size: 16px;
+            }
+            .demo-container {
+                padding: 15px;
+                margin: 0 5px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            h4 {
+                font-size: 1.2rem;
+            }
+            .bs-stepper-header {
+                justify-content: center;
+                flex-wrap: nowrap;
+                overflow: hidden;
+            }
+            .bs-stepper-header .step {
+                display: none;
+                min-width: 120px;
+                margin: 0 10px;
+            }
+            .bs-stepper-header .step.active {
+                display: flex;
+            }
+            .bs-stepper-header .line {
+                display: none;
+            }
+            .step-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .step-buttons button {
+                width: 100%;
+                min-height: 50px;
+                font-size: 16px;
+            }
+            .camera-container {
+                text-align: center;
+            }
+            #camera, #canvas, #photo-placeholder, #captured-photo {
+                max-width: 100% !important;
+                width: auto !important;
+                height: auto !important;
+                aspect-ratio: 4/3;
+            }
+            .camera-controls {
+                text-align: center;
+            }
+            .camera-controls button {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+                min-height: 50px;
+                font-size: 16px;
+            }
+            .form-control {
+                min-height: 50px;
+                font-size: 16px;
+            }
+            .card-body p {
+                margin-bottom: 8px;
+                font-size: 14px;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .btn-group .btn {
+                margin-bottom: 10px;
+                min-height: 50px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .demo-container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.3rem;
+            }
+            h4 {
+                font-size: 1.1rem;
+            }
+            #photo-placeholder {
+                min-height: 200px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Touch targets */
+        .form-check-input {
+            transform: scale(1.5);
+            margin-right: 10px;
+        }
+        
+        .form-check-label {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        
+        /* Improve stepper visibility on mobile */
+        .bs-stepper-circle {
+            width: 2.5rem;
+            height: 2.5rem;
+            line-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .bs-stepper-circle i {
+            font-size: 1rem;
+        }
+        
+        .bs-stepper-label {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .bs-stepper-circle {
+                width: 3rem;
+                height: 3rem;
+                line-height: 3rem;
+            }
+            .bs-stepper-circle i {
+                font-size: 1.2rem;
+            }
+            .bs-stepper-label {
+                font-size: 0.9rem;
+                margin-top: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .bs-stepper-label {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="demo-container">
+            <h1 class="text-center mb-4">Check In</h1>
+            
+            <!-- Stepper -->
+            <div class="bs-stepper">
+                <div class="bs-stepper-header" role="tablist">
+                    <!-- Step 1 -->
+                    <div class="step" data-target="#registration-part">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="registration-part" id="registration-part-trigger">
+                            <span class="bs-stepper-circle"><i class="fas fa-user-plus"></i></span>
+                            <span class="bs-stepper-label">ลงทะเบียน</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    
+                    <!-- Step 2 -->
+                    <div class="step" data-target="#camera-part">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="camera-part" id="camera-part-trigger">
+                            <span class="bs-stepper-circle"><i class="fas fa-camera"></i></span>
+                            <span class="bs-stepper-label">ถ่ายรูป</span>
+                        </button>
+                    </div>
+                    <div class="line"></div>
+                    
+                    <!-- Step 3 -->
+                    <div class="step" data-target="#checkin-part">
+                        <button type="button" class="step-trigger" role="tab" aria-controls="checkin-part" id="checkin-part-trigger">
+                            <span class="bs-stepper-circle"><i class="fas fa-check-circle"></i></span>
+                            <span class="bs-stepper-label">Check In</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bs-stepper-content">
+                    <!-- Step 1 Content -->
+                    <div id="registration-part" class="content fade" role="tabpanel" aria-labelledby="registration-part-trigger">
+                        <h4>ข้อมูลลงทะเบียน</h4>
+                        <div class="form-group">
+                            <label for="pincode">PIN Code</label>
+                            <input type="text" class="form-control" id="pincode" placeholder="กรอก PIN Code" maxlength="6">
+                        </div>
+                        <button class="btn btn-info" onclick="loadRegistrationData()">ตรวจสอบข้อมูล</button>
+                        
+                        <div id="registration-data" class="mt-4" style="display: none;">
+                            <h5>ข้อมูลการลงทะเบียน</h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    <p><strong>1. ชื่อ นามสกุล:</strong> <span id="fullname"></span></p>
+                                    <p><strong>2. บริษัท:</strong> <span id="company"></span></p>
+                                    <p><strong>3. เบอร์โทรศัพท์:</strong> <span id="phone"></span></p>
+                                    <p><strong>4. อีเมล:</strong> <span id="email"></span></p>
+                                    <p><strong>5. วัตถุประสงค์:</strong> <span id="purpose"></span></p>
+                                    <p><strong>6. ชื่อผู้ติดต่อ:</strong> <span id="contact"></span></p>
+                                    <p><strong>7. แผนก:</strong> <span id="department"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="step-buttons">
+                            <div></div>
+                            <button class="btn btn-primary" id="next-step1" onclick="stepper.next()" style="display: none;">ถัดไป</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2 Content -->
+                    <div id="camera-part" class="content fade" role="tabpanel" aria-labelledby="camera-part-trigger">
+                        <h4>ถ่ายรูป</h4>
+                        <div class="text-center">
+                            <div class="camera-container mb-3">
+                                <video id="camera" width="400" height="300" autoplay style="border: 2px solid #ddd; border-radius: 10px; display: none; max-width: 100%;"></video>
+                                <canvas id="canvas" width="400" height="300" style="border: 2px solid #ddd; border-radius: 10px; display: none;"></canvas>
+                                <div id="photo-placeholder" style="width: 100%; max-width: 400px; height: 300px; border: 2px dashed #ddd; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto; background-color: #f8f9fa;">
+                                    <p class="text-muted">คลิกเปิดกล้องเพื่อถ่ายรูป</p>
+                                </div>
+                                <img id="captured-photo" style="width: 100%; max-width: 400px; height: 300px; border: 2px solid #ddd; border-radius: 10px; display: none;">
+                            </div>
+                            <div class="camera-controls">
+                                <button class="btn btn-info" id="start-camera" onclick="startCamera()">เปิดกล้อง</button>
+                                <button class="btn btn-success" id="capture-photo" onclick="capturePhoto()" style="display: none;">ถ่ายรูป</button>
+                                <button class="btn btn-warning" id="retake-photo" onclick="retakePhoto()" style="display: none;">ถ่ายใหม่</button>
+                            </div>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn btn-secondary" onclick="stepper.previous()">ย้อนกลับ</button>
+                            <button class="btn btn-primary" onclick="stepper.next()">ถัดไป</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3 Content -->
+                    <div id="checkin-part" class="content fade" role="tabpanel" aria-labelledby="checkin-part-trigger">
+                        <h4>Check In</h4>
+                        <div class="alert alert-info">
+                            <h5>ยืนยันข้อมูลการ Check In:</h5>
+                            <div id="checkin-summary"></div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirm-checkin">
+                            <label class="form-check-label" for="confirm-checkin">
+                                ยืนยันการ Check In
+                            </label>
+                        </div>
+                        <div class="step-buttons">
+                            <button class="btn btn-secondary" onclick="stepper.previous()">ย้อนกลับ</button>
+                            <button class="btn btn-success" onclick="confirmCheckIn()">Check In</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Control Buttons -->
+            <div class="mt-4 text-center">
+                <button type="button" class="btn btn-warning" onclick="stepper.reset()">รีเซ็ต</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- BS-Stepper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bs-stepper/dist/js/bs-stepper.min.js"></script>
+    
+    <script>
+        var stepper;
+        var registrationData = {};
+        var capturedPhotoData = null;
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            // สร้าง Stepper instance
+            stepper = new Stepper(document.querySelector('.bs-stepper'), {
+                linear: true,
+                animation: true
+            });
+            
+            // Event listeners
+            var stepperEl = document.querySelector('.bs-stepper');
+            
+            stepperEl.addEventListener('show.bs-stepper', function (event) {
+                console.log('กำลังแสดง step:', event.detail.indexStep);
+                
+                // อัพเดทข้อมูลสรุปเมื่อไปที่ step 3
+                if (event.detail.indexStep === 2) {
+                    updateCheckInSummary();
+                }
+            });
+            
+            stepperEl.addEventListener('shown.bs-stepper', function (event) {
+                console.log('แสดง step เรียบร้อย:', event.detail.indexStep);
+            });
+        });
+        
+        // Mock data for registration
+        var mockRegistrationData = {
+            '123456': {
+                fullname: 'สมชาย ใจดี',
+                company: 'บริษัท ABC จำกัด',
+                phone: '081-234-5678',
+                email: 'somchai@abc.co.th',
+                purpose: 'ประชุมงาน',
+                contact: 'คุณสมหญิง',
+                department: 'แผนกขาย'
+            },
+            '789012': {
+                fullname: 'สมหญิง รักดี',
+                company: 'บริษัท XYZ จำกัด',
+                phone: '082-345-6789',
+                email: 'somying@xyz.co.th',
+                purpose: 'นำเสนอผลิตภัณฑ์',
+                contact: 'คุณสมชาย',
+                department: 'แผนกการตลาด'
+            }
+        };
+        
+        function loadRegistrationData() {
+            var pincode = document.getElementById('pincode').value;
+            
+            if (!pincode) {
+                alert('กรุณากรอก PIN Code');
+                return;
+            }
+            
+            if (mockRegistrationData[pincode]) {
+                registrationData = mockRegistrationData[pincode];
+                displayRegistrationData();
+                document.getElementById('next-step1').style.display = 'inline-block';
+            } else {
+                alert('ไม่พบข้อมูลการลงทะเบียน กรุณาตรวจสอบ PIN Code');
+            }
+        }
+        
+        function displayRegistrationData() {
+            document.getElementById('fullname').textContent = registrationData.fullname;
+            document.getElementById('company').textContent = registrationData.company;
+            document.getElementById('phone').textContent = registrationData.phone;
+            document.getElementById('email').textContent = registrationData.email;
+            document.getElementById('purpose').textContent = registrationData.purpose;
+            document.getElementById('contact').textContent = registrationData.contact;
+            document.getElementById('department').textContent = registrationData.department;
+            
+            document.getElementById('registration-data').style.display = 'block';
+        }
+        
+        // Camera functions
+        function startCamera() {
+            // ตรวจสอบขนาดหน้าจอสำหรับ mobile
+            var isMobile = window.innerWidth <= 768;
+            var videoConstraints = {
+                video: { 
+                    width: isMobile ? { ideal: 320 } : { ideal: 400 }, 
+                    height: isMobile ? { ideal: 240 } : { ideal: 300 },
+                    facingMode: 'user'
+                } 
+            };
+            
+            navigator.mediaDevices.getUserMedia(videoConstraints)
+            .then(function(stream) {
+                var video = document.getElementById('camera');
+                video.srcObject = stream;
+                video.style.display = 'block';
+                document.getElementById('photo-placeholder').style.display = 'none';
+                document.getElementById('start-camera').style.display = 'none';
+                document.getElementById('capture-photo').style.display = 'inline-block';
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera: ', err);
+                alert('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการเข้าถึงกล้อง');
+            });
+        }
+        
+        function capturePhoto() {
+            var video = document.getElementById('camera');
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+            
+            // ปรับขนาด canvas ตามขนาดจริงของ video
+            var videoWidth = video.videoWidth || video.width;
+            var videoHeight = video.videoHeight || video.height;
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+            
+            // วาดภาพจาก video ไปยัง canvas
+            context.drawImage(video, 0, 0, videoWidth, videoHeight);
+            
+            // แปลง canvas เป็น image data
+            capturedPhotoData = canvas.toDataURL('image/png');
+            
+            // แสดงภาพที่ถ่าย
+            var capturedImg = document.getElementById('captured-photo');
+            capturedImg.src = capturedPhotoData;
+            capturedImg.style.display = 'block';
+            
+            // ซ่อน video และแสดงปุ่มควบคุม
+            video.style.display = 'none';
+            document.getElementById('capture-photo').style.display = 'none';
+            document.getElementById('retake-photo').style.display = 'inline-block';
+            
+            // หยุด camera stream
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        
+        function retakePhoto() {
+            document.getElementById('captured-photo').style.display = 'none';
+            document.getElementById('retake-photo').style.display = 'none';
+            document.getElementById('start-camera').style.display = 'inline-block';
+            document.getElementById('photo-placeholder').style.display = 'flex';
+            capturedPhotoData = null;
+        }
+        
+        function updateCheckInSummary() {
+            var summary = document.getElementById('checkin-summary');
+            var currentTime = new Date().toLocaleString('th-TH');
+            
+            summary.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>ชื่อ-นามสกุล:</strong> ${registrationData.fullname || 'ไม่ระบุ'}</p>
+                        <p><strong>บริษัท:</strong> ${registrationData.company || 'ไม่ระบุ'}</p>
+                        <p><strong>เบอร์โทร:</strong> ${registrationData.phone || 'ไม่ระบุ'}</p>
+                        <p><strong>อีเมล:</strong> ${registrationData.email || 'ไม่ระบุ'}</p>
+                        <p><strong>วัตถุประสงค์:</strong> ${registrationData.purpose || 'ไม่ระบุ'}</p>
+                        <p><strong>ผู้ติดต่อ:</strong> ${registrationData.contact || 'ไม่ระบุ'}</p>
+                        <p><strong>แผนก:</strong> ${registrationData.department || 'ไม่ระบุ'}</p>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <p><strong>รูปภาพ:</strong></p>
+                        ${capturedPhotoData ? `<img src="${capturedPhotoData}" style="width: 200px; height: 150px; border: 1px solid #ddd; border-radius: 5px;">` : '<p class="text-muted">ไม่มีรูปภาพ</p>'}
+                    </div>
+                </div>
+                <hr>
+                <p><strong>เวลา Check In:</strong> ${currentTime}</p>
+            `;
+        }
+        
+        function confirmCheckIn() {
+            var confirmCheck = document.getElementById('confirm-checkin').checked;
+            
+            if (!confirmCheck) {
+                alert('กรุณายืนยันการ Check In');
+                return;
+            }
+            
+            alert('Check In สำเร็จ! ยินดีต้อนรับ ' + registrationData.fullname);
+            stepper.reset();
+            
+            // รีเซ็ตข้อมูล
+            registrationData = {};
+            capturedPhotoData = null;
+            document.getElementById('pincode').value = '';
+            document.getElementById('registration-data').style.display = 'none';
+            document.getElementById('next-step1').style.display = 'none';
+            document.getElementById('confirm-checkin').checked = false;
+            
+            // รีเซ็ตกล้อง
+            document.getElementById('captured-photo').style.display = 'none';
+            document.getElementById('camera').style.display = 'none';
+            document.getElementById('photo-placeholder').style.display = 'flex';
+            document.getElementById('start-camera').style.display = 'inline-block';
+            document.getElementById('capture-photo').style.display = 'none';
+            document.getElementById('retake-photo').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
