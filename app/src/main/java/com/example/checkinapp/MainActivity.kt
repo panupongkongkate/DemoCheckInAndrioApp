@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.checkinapp.data.RegistrationData
+import com.example.checkinapp.detection.DetectionResults
 import com.example.checkinapp.fragments.Step1RegistrationFragment
 import com.example.checkinapp.fragments.Step2CameraFragment
 import com.example.checkinapp.fragments.Step3CheckInFragment
@@ -32,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     private var currentStep = 1
     private var registrationData: RegistrationData? = null
     private var capturedPhoto: Bitmap? = null
+    private var detectionResults: DetectionResults? = null
     
     // Fragments
     private val step1Fragment = Step1RegistrationFragment()
@@ -41,6 +43,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        
+        // ซ่อน Action Bar สำหรับ MainActivity
+        supportActionBar?.hide()
         
         initViews()
         setupListeners()
@@ -109,8 +114,9 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Step 2 Fragment Listener
-        step2Fragment.setOnPhotoChangedListener { photo ->
+        step2Fragment.setOnPhotoChangedListener { photo, detection ->
             this.capturedPhoto = photo
+            this.detectionResults = detection
         }
         
         // Step 3 Fragment Listener
@@ -150,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         
         // Update summary for step 3 after fragment is shown
         if (fragment == step3Fragment) {
-            step3Fragment.updateSummary(registrationData, capturedPhoto)
+            step3Fragment.updateSummary(registrationData, capturedPhoto, detectionResults)
         }
     }
     
@@ -240,12 +246,14 @@ class MainActivity : AppCompatActivity() {
         currentStep = 1
         registrationData = null
         capturedPhoto = null
+        detectionResults = null
         
         updateStepUI()
         showCurrentStep()
         
         // Reset fragments after showing step 1
         step1Fragment.resetData()
+        step2Fragment.resetCamera()
         
         Toast.makeText(this, "Check In สำเร็จ!", Toast.LENGTH_LONG).show()
     }

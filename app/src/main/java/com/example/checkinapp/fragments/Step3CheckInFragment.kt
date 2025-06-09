@@ -6,9 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.checkinapp.R
 import com.example.checkinapp.data.RegistrationData
+import com.example.checkinapp.detection.DetectionResults
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -26,6 +28,11 @@ class Step3CheckInFragment : Fragment() {
     private lateinit var tvCheckinTime: TextView
     private lateinit var cbConfirmCheckin: CheckBox
     private lateinit var btnFinalCheckin: Button
+    
+    // Detection info views
+    private lateinit var layoutDetectionInfo: LinearLayout
+    private lateinit var tvDetectionSummary: TextView
+    private lateinit var tvDetectionDetails: TextView
     
     private var onCheckInCompleteListener: (() -> Unit)? = null
     
@@ -60,6 +67,9 @@ class Step3CheckInFragment : Fragment() {
         tvCheckinTime = view.findViewById(R.id.tv_checkin_time)
         cbConfirmCheckin = view.findViewById(R.id.cb_confirm_checkin)
         btnFinalCheckin = view.findViewById(R.id.btn_final_checkin)
+        
+        // Create detection info views programmatically since they don't exist in layout
+        createDetectionInfoLayout(view)
     }
     
     private fun setupListeners() {
@@ -68,12 +78,71 @@ class Step3CheckInFragment : Fragment() {
         }
     }
     
-    fun updateSummary(registrationData: RegistrationData?, capturedPhoto: Bitmap?) {
+    private fun createDetectionInfoLayout(view: View) {
+        // Find the main LinearLayout inside ScrollView
+        val scrollView = view as? ScrollView
+        val rootLayout = scrollView?.getChildAt(0) as? LinearLayout ?: return
+        
+        // Create detection info layout
+        layoutDetectionInfo = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(16, 16, 16, 16)
+            visibility = View.GONE
+            background = ContextCompat.getDrawable(context, R.drawable.summary_card_background)
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            params.setMargins(0, 0, 0, 24)
+            layoutParams = params
+        }
+        
+        // Create header for detection info
+        val headerText = TextView(context).apply {
+            text = "🔍 ข้อมูลการตรวจจับวัตถุ"
+            textSize = 18f
+            setTextColor(ContextCompat.getColor(context, R.color.teal_200))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            params.setMargins(0, 0, 0, 16)
+            layoutParams = params
+        }
+        
+        tvDetectionSummary = TextView(context).apply {
+            textSize = 16f
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            params.setMargins(0, 0, 0, 8)
+            layoutParams = params
+        }
+        
+        tvDetectionDetails = TextView(context).apply {
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(context, android.R.color.darker_gray))
+        }
+        
+        layoutDetectionInfo.addView(headerText)
+        layoutDetectionInfo.addView(tvDetectionSummary)
+        layoutDetectionInfo.addView(tvDetectionDetails)
+        
+        // Add to main layout before the confirmation checkbox (second to last child)
+        val insertIndex = rootLayout.childCount - 2
+        rootLayout.addView(layoutDetectionInfo, insertIndex)
+    }
+    
+    fun updateSummary(registrationData: RegistrationData?, capturedPhoto: Bitmap?, detectionResults: DetectionResults? = null) {
         // Check if view is initialized
         if (!::tvSummaryFullname.isInitialized) {
             // If view is not ready, store data and update later
             view?.post {
-                updateSummary(registrationData, capturedPhoto)
+                updateSummary(registrationData, capturedPhoto, detectionResults)
             }
             return
         }
@@ -97,7 +166,17 @@ class Step3CheckInFragment : Fragment() {
             tvNoPhoto.visibility = View.VISIBLE
         }
         
+        // Update detection info
+        updateDetectionInfo(detectionResults)
+        
         updateCheckinTime()
+    }
+    
+    private fun updateDetectionInfo(detectionResults: DetectionResults?) {
+        // Hide detection info completely - user should not see detection details
+        if (::layoutDetectionInfo.isInitialized) {
+            layoutDetectionInfo.visibility = View.GONE
+        }
     }
     
     private fun updateCheckinTime() {

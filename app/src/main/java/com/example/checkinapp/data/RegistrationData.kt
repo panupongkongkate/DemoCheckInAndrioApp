@@ -1,5 +1,8 @@
 package com.example.checkinapp.data
 
+import android.graphics.Bitmap
+import com.example.checkinapp.detection.DetectionResults
+
 data class RegistrationData(
     val fullname: String,
     val company: String,
@@ -8,6 +11,13 @@ data class RegistrationData(
     val purpose: String,
     val contact: String,
     val department: String
+)
+
+data class CheckInData(
+    val registrationData: RegistrationData,
+    val photo: Bitmap? = null,
+    val detectionResults: DetectionResults? = null,
+    val checkInTime: Long = System.currentTimeMillis()
 )
 
 object MockRegistrationRepository {
