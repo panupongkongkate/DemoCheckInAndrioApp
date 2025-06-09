@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.checkinapp.fragments.LoginFragment"
+        android:label="เข้าสู่ระบบ">
+        <action
+            android:id="@+id/action_loginFragment_to_step1RegistrationFragment"
+            app:destination="@id/step1RegistrationFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/step1RegistrationFragment"
+        android:name="com.example.checkinapp.fragments.Step1RegistrationFragment"
+        android:label="ลงทะเบียน">
+        <action
+            android:id="@+id/action_step1RegistrationFragment_to_step2CameraFragment"
+            app:destination="@id/step2CameraFragment" />
+        <action
+            android:id="@+id/action_step1RegistrationFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/step2CameraFragment"
+        android:name="com.example.checkinapp.fragments.Step2CameraFragment"
+        android:label="ถ่ายรูป">
+        <action
+            android:id="@+id/action_step2CameraFragment_to_step3CheckInFragment"
+            app:destination="@id/step3CheckInFragment" />
+        <action
+            android:id="@+id/action_step2CameraFragment_to_step1RegistrationFragment"
+            app:destination="@id/step1RegistrationFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/step3CheckInFragment"
+        android:name="com.example.checkinapp.fragments.Step3CheckInFragment"
+        android:label="Check-in">
+        <action
+            android:id="@+id/action_step3CheckInFragment_to_step1RegistrationFragment"
+            app:destination="@id/step1RegistrationFragment"
+            app:popUpTo="@id/step1RegistrationFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+</navigation>
