@@ -1,25 +1,50 @@
 package com.example.checkinapp
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.view.MenuItem
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.example.checkinapp.data.RegistrationData
 import com.example.checkinapp.fragments.Step1RegistrationFragment
 import com.example.checkinapp.fragments.Step2CameraFragment
 import com.example.checkinapp.fragments.Step3CheckInFragment
+import com.google.android.material.navigation.NavigationView
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
     companion object {
         private const val CAMERA_PERMISSION_CODE = 100
     }
 
+    // SessionManager (temporary inline class)
+    private class SessionManager(private val activity: MainActivity) {
+        private val prefs = activity.getSharedPreferences("CheckInAppSession", MODE_PRIVATE)
+        
+        fun isLoggedIn(): Boolean = prefs.getBoolean("isLoggedIn", false)
+        fun getUsername(): String? = prefs.getString("username", null)
+        fun logout() {
+            prefs.edit().clear().apply()
+            val intent = Intent(activity, LoginActivity::class.java)
+            activity.startActivity(intent)
+            activity.finish()
+        }
+    }
+    
+    private lateinit var sessionManager: SessionManager
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
+    private lateinit var toggle: ActionBarDrawerToggle
+    
     private lateinit var btnPrevious: Button
     private lateinit var btnNext: Button
     
@@ -40,9 +65,21 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        
+        // Initialize session manager
+        sessionManager = SessionManager(this)
+        
+        // Check if user is logged in
+        if (!sessionManager.isLoggedIn()) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+        
+        setContentView(R.layout.activity_main_with_drawer)
         
         initViews()
+        setupDrawer()
         setupListeners()
         updateStepUI()
         
@@ -54,6 +91,9 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun initViews() {
+        drawerLayout = findViewById(R.id.drawer_layout)
+        navigationView = findViewById(R.id.nav_view)
+        
         btnPrevious = findViewById(R.id.btn_previous)
         btnNext = findViewById(R.id.btn_next)
         
@@ -109,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Step 2 Fragment Listener
-        step2Fragment.setOnPhotoChangedListener { photo ->
+        step2Fragment.setOnPhotoChangedListener { photo, detectionResults ->
             this.capturedPhoto = photo
         }
         
@@ -118,6 +158,30 @@ class MainActivity : AppCompatActivity() {
             // Reset data and go back to step 1
             resetCheckIn()
         }
+    }
+    
+    private fun setupDrawer() {
+        // Set up action bar
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Check In System"
+        
+        // Set up drawer toggle
+        toggle = ActionBarDrawerToggle(
+            this,
+            drawerLayout,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+        
+        // Set navigation item listener
+        navigationView.setNavigationItemSelectedListener(this)
+        
+        // Update header with username
+        val headerView = navigationView.getHeaderView(0)
+        val tvUsername = headerView.findViewById<TextView>(R.id.tv_username)
+        tvUsername.text = "สวัสดี, ${sessionManager.getUsername() ?: "ผู้ใช้"}"
     }
     
     private fun validateStep1(): Boolean {
@@ -248,5 +312,36 @@ class MainActivity : AppCompatActivity() {
         step1Fragment.resetData()
         
         Toast.makeText(this, "Check In สำเร็จ!", Toast.LENGTH_LONG).show()
+    }
+    
+    // Navigation methods
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.nav_checkin -> {
+                // Already on check in page, do nothing
+                drawerLayout.closeDrawer(GravityCompat.START)
+                return true
+            }
+            R.id.nav_logout -> {
+                sessionManager.logout()
+                return true
+            }
+        }
+        return false
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (toggle.onOptionsItemSelected(item)) {
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+    
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
     }
 }
