@@ -31,6 +31,13 @@
             android:exported="false"
             android:label="Check In"
             android:theme="@style/Theme.CheckInApp" />
+            
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true"
+            android:theme="@style/zxing_CaptureTheme"
+            tools:replace="android:screenOrientation" />
     </application>
 
 </manifest>

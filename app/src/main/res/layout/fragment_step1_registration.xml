@@ -46,16 +46,37 @@
 
         </LinearLayout>
 
-        <!-- Check Data Button -->
-        <Button
-            android:id="@+id/btn_check_data"
+        <!-- Buttons Layout -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="ตรวจสอบข้อมูล"
-            android:textSize="16sp"
-            android:background="@drawable/button_info"
-            android:textColor="@color/white"
-            android:layout_marginBottom="24dp" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btn_check_data"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="ตรวจสอบ"
+                android:textSize="16sp"
+                android:background="@drawable/button_info"
+                android:textColor="@color/white"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btn_scan_qr"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="แสกน QR"
+                android:textSize="16sp"
+                android:background="@drawable/button_secondary"
+                android:textColor="@color/white"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
 
         <!-- Registration Data Display -->
         <LinearLayout
