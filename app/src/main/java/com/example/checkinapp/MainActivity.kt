@@ -210,11 +210,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun showFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, fragment)
-            .commitNow()
+            .commit()
         
         // Update summary for step 3 after fragment is shown
         if (fragment == step3Fragment) {
-            step3Fragment.updateSummary(registrationData, capturedPhoto)
+            // Post to ensure fragment is fully attached
+            findViewById<View>(android.R.id.content).post {
+                step3Fragment.updateSummary(registrationData, capturedPhoto)
+            }
         }
     }
     
@@ -310,6 +313,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         
         // Reset fragments after showing step 1
         step1Fragment.resetData()
+        step2Fragment.resetCamera()
         
         Toast.makeText(this, "Check In สำเร็จ!", Toast.LENGTH_LONG).show()
     }

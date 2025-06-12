@@ -1,5 +1,7 @@
 package com.example.checkinapp.fragments
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -7,12 +9,15 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Color
 import android.graphics.Matrix
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -31,6 +36,7 @@ class Step2CameraFragment : Fragment() {
     private lateinit var cameraPlaceholder: LinearLayout
     private lateinit var ivCapturedPhoto: ImageView
     private lateinit var btnStartCamera: Button
+    private lateinit var btnUploadPhoto: Button
     private lateinit var layoutCameraActions: LinearLayout
     private lateinit var btnCapturePhoto: Button
     private lateinit var btnRetakePhoto: Button
@@ -44,6 +50,10 @@ class Step2CameraFragment : Fragment() {
     private var detectionResults: DetectionResults? = null
     
     private var onPhotoChangedListener: ((Bitmap?, DetectionResults?) -> Unit)? = null
+    
+    companion object {
+        private const val GALLERY_REQUEST_CODE = 1001
+    }
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,6 +85,7 @@ class Step2CameraFragment : Fragment() {
         cameraPlaceholder = view.findViewById(R.id.camera_placeholder)
         ivCapturedPhoto = view.findViewById(R.id.iv_captured_photo)
         btnStartCamera = view.findViewById(R.id.btn_start_camera)
+        btnUploadPhoto = view.findViewById(R.id.btn_upload_photo)
         layoutCameraActions = view.findViewById(R.id.layout_camera_actions)
         btnCapturePhoto = view.findViewById(R.id.btn_capture_photo)
         btnRetakePhoto = view.findViewById(R.id.btn_retake_photo)
@@ -83,6 +94,10 @@ class Step2CameraFragment : Fragment() {
     private fun setupListeners() {
         btnStartCamera.setOnClickListener {
             startCamera()
+        }
+        
+        btnUploadPhoto.setOnClickListener {
+            openGallery()
         }
         
         btnCapturePhoto.setOnClickListener {
@@ -128,6 +143,7 @@ class Step2CameraFragment : Fragment() {
                 cameraPlaceholder.visibility = View.GONE
                 cameraPreview.visibility = View.VISIBLE
                 btnStartCamera.visibility = View.GONE
+                btnUploadPhoto.visibility = View.GONE
                 layoutCameraActions.visibility = View.VISIBLE
                 btnCapturePhoto.visibility = View.VISIBLE
                 btnRetakePhoto.visibility = View.GONE
@@ -164,11 +180,27 @@ class Step2CameraFragment : Fragment() {
                             val bitmap = BitmapFactory.decodeStream(inputStream)
                             inputStream?.close()
                             
-                            // Use image as-is (back camera doesn't need mirroring)
-                            capturedBitmap = bitmap
-                            
-                            // Run YOLO detection and apply censoring
-                            processImageWithYolo(bitmap)
+                            if (bitmap != null) {
+                                // Use image as-is (back camera doesn't need mirroring)
+                                capturedBitmap = bitmap
+                                
+                                // Show the captured image IMMEDIATELY (before YOLO processing)
+                                ivCapturedPhoto.setImageBitmap(bitmap)
+                                ivCapturedPhoto.visibility = View.VISIBLE
+                                cameraPreview.visibility = View.GONE
+                                btnCapturePhoto.visibility = View.GONE
+                                btnRetakePhoto.visibility = View.VISIBLE
+                                
+                                // Notify listener immediately with original image
+                                onPhotoChangedListener?.invoke(bitmap, null)
+                                
+                                Toast.makeText(context, "ถ่ายรูปสำเร็จ", Toast.LENGTH_SHORT).show()
+                                
+                                // Run YOLO detection in background
+                                processImageWithYolo(bitmap)
+                            } else {
+                                Toast.makeText(context, "ไม่สามารถประมวลผลรูปภาพได้", Toast.LENGTH_SHORT).show()
+                            }
                             
                         } catch (e: Exception) {
                             Log.e("CameraX", "Error processing captured image", e)
@@ -188,6 +220,7 @@ class Step2CameraFragment : Fragment() {
         ivCapturedPhoto.visibility = View.GONE
         cameraPlaceholder.visibility = View.VISIBLE
         btnStartCamera.visibility = View.VISIBLE
+        btnUploadPhoto.visibility = View.VISIBLE
         layoutCameraActions.visibility = View.GONE
         
         // Stop camera
@@ -197,6 +230,63 @@ class Step2CameraFragment : Fragment() {
             cameraProvider.unbindAll()
         }, ContextCompat.getMainExecutor(requireContext()))
     }
+    
+    private fun openGallery() {
+        try {
+            val getContentIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "image/*"
+                addCategory(Intent.CATEGORY_OPENABLE)
+            }
+            
+            startActivityForResult(getContentIntent, GALLERY_REQUEST_CODE)
+            
+        } catch (e: Exception) {
+            Log.e("Step2Camera", "Error opening gallery", e)
+            Toast.makeText(context, "เกิดข้อผิดพลาดในการเปิด Gallery", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun handleSelectedImage(uri: Uri) {
+        try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream?.close()
+            
+            if (bitmap != null) {
+                capturedBitmap = bitmap
+                
+                // Show the uploaded image IMMEDIATELY (before YOLO processing)
+                ivCapturedPhoto.setImageBitmap(bitmap)
+                ivCapturedPhoto.visibility = View.VISIBLE
+                
+                // Hide both buttons and camera placeholder
+                btnStartCamera.visibility = View.GONE
+                btnUploadPhoto.visibility = View.GONE
+                cameraPlaceholder.visibility = View.GONE
+                cameraPreview.visibility = View.GONE
+                
+                // Show retake button
+                layoutCameraActions.visibility = View.VISIBLE
+                btnCapturePhoto.visibility = View.GONE
+                btnRetakePhoto.visibility = View.VISIBLE
+                
+                // Notify listener immediately with original image
+                onPhotoChangedListener?.invoke(bitmap, null)
+                
+                Toast.makeText(context, "อัปโหลดรูปภาพสำเร็จ", Toast.LENGTH_SHORT).show()
+                
+                // Process uploaded image with YOLO in background
+                processImageWithYolo(bitmap)
+                
+            } else {
+                Toast.makeText(context, "ไม่สามารถโหลดรูปภาพได้", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("Step2Camera", "Error loading selected image", e)
+            Toast.makeText(context, "เกิดข้อผิดพลาดในการโหลดรูปภาพ", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
     
     fun setOnPhotoChangedListener(listener: (Bitmap?, DetectionResults?) -> Unit) {
         onPhotoChangedListener = listener
@@ -217,6 +307,7 @@ class Step2CameraFragment : Fragment() {
         ivCapturedPhoto.visibility = View.GONE
         cameraPlaceholder.visibility = View.VISIBLE
         btnStartCamera.visibility = View.VISIBLE
+        btnUploadPhoto.visibility = View.VISIBLE
         layoutCameraActions.visibility = View.GONE
         
         // Stop camera only if context is available
@@ -231,7 +322,7 @@ class Step2CameraFragment : Fragment() {
     
     
     private fun processImageWithYolo(bitmap: Bitmap) {
-        // Show loading indicator
+        // Show subtle loading indicator
         Toast.makeText(context, "กำลังตรวจจับวัตถุ...", Toast.LENGTH_SHORT).show()
         
         // Run YOLO detection in background thread
@@ -239,21 +330,18 @@ class Step2CameraFragment : Fragment() {
             try {
                 detectionResults = yoloDetector?.detect(bitmap)
                 
-                // Update UI on main thread
+                // Update UI on main thread - only update the image with bounding boxes
                 activity?.runOnUiThread {
                     val annotatedBitmap = drawDetections(bitmap, detectionResults)
                     
-                    // Update UI
+                    // Only update the image (don't change other UI elements)
                     ivCapturedPhoto.setImageBitmap(annotatedBitmap)
-                    ivCapturedPhoto.visibility = View.VISIBLE
-                    cameraPreview.visibility = View.GONE
-                    btnCapturePhoto.visibility = View.GONE
-                    btnRetakePhoto.visibility = View.VISIBLE
+                    capturedBitmap = annotatedBitmap // Update stored bitmap to annotated version
                     
                     // Show detection info
                     showDetectionInfo(detectionResults)
                     
-                    // Notify listener with processed image (with bounding boxes)
+                    // Notify listener with updated image that has bounding boxes
                     onPhotoChangedListener?.invoke(annotatedBitmap, detectionResults)
                 }
                 
@@ -267,14 +355,8 @@ class Step2CameraFragment : Fragment() {
                     }
                     Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
                     
-                    // Still show the image without annotations
-                    ivCapturedPhoto.setImageBitmap(bitmap)
-                    ivCapturedPhoto.visibility = View.VISIBLE
-                    cameraPreview.visibility = View.GONE
-                    btnCapturePhoto.visibility = View.GONE
-                    btnRetakePhoto.visibility = View.VISIBLE
-                    
-                    // Notify listener with null detection results
+                    // Keep original image if YOLO fails (no need to change UI)
+                    // Notify listener that detection failed but keep the original image
                     onPhotoChangedListener?.invoke(bitmap, null)
                 }
             }
@@ -416,6 +498,25 @@ class Step2CameraFragment : Fragment() {
             veryHighConfidenceDetections.forEach { detection ->
                 val confidencePercent = String.format("%.0f%%", detection.confidence * 100)
                 Log.i("Step2Camera", "  🟢 ${detection.label}: $confidencePercent")
+            }
+        }
+    }
+    
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == GALLERY_REQUEST_CODE) {
+            try {
+                if (resultCode == Activity.RESULT_OK) {
+                    data?.data?.let { uri ->
+                        handleSelectedImage(uri)
+                    } ?: run {
+                        Toast.makeText(context, "ไม่สามารถเลือกรูปภาพได้", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Step2Camera", "Error in gallery result", e)
+                Toast.makeText(context, "เกิดข้อผิดพลาดในการประมวลผลรูปภาพ", Toast.LENGTH_SHORT).show()
             }
         }
     }
